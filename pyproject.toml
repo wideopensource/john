@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "john"
+version = "0.1.2"
+description = "Jeneral Outlying Helper Nuggetoids"
+authors = [
+  "WideOpenTech <fossie@wideopentech.co.uk>",
+]
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/wideopensource/john"
+"Bug Tracker" = "https://github.com/wideopensource/john/issues"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+
+

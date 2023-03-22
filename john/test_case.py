@@ -1,3 +1,5 @@
+import sys
+import traceback
 import unittest
 from tempfile import gettempdir
 from os.path import join, exists
@@ -70,7 +72,7 @@ class TestCaseFactoryMixin:
             self._helper.create_temp_folder(self.factory_foldername)
 
 
-class TestCase(unittest.TestCase, TestCaseFactoryMixin):
+class TestCaseBase(unittest.TestCase, TestCaseFactoryMixin):
     def __init__(self, methodName: str = "runTest") -> None:
         super().__init__(methodName)
         self._helper = TestHelper(test_name=self.testName, verbose=False)
@@ -93,3 +95,127 @@ class TestCase(unittest.TestCase, TestCaseFactoryMixin):
 
     def writeFile(self, filename: str, text: str) -> str:
         return self._helper.write_file(self.testName, filename=filename, text=text)
+
+
+# foss: based on https://stackoverflow.com/questions/4319825/python-unittest-opposite-of-assertraises
+is_micropython = sys.implementation.name == "micropython"
+
+if is_micropython:
+    from unittest import AssertRaisesContext
+
+    class AssertDoesNotRaiseContext(AssertRaisesContext):
+        def __exit__(self, exc_type, exc_value, tb):
+            self.exception = exc_value
+            if exc_type is not None:
+                assert False, "%r raised (%r expected)" % (
+                    exc_type, self.expected)
+
+            return True
+
+    class MicropythonAssertMixin:
+        def assertCountEqual(self, first, second, msg=None):
+            x = len(first)
+            y = len(second)
+            if not msg:
+                msg = "%r vs (expected) %r" % (x, y)
+            assert x == y, msg
+
+        def assertTupleEqual(self, first, second, msg=None):
+            assert isinstance(first, tuple)
+            assert isinstance(second, tuple)
+
+            x = first
+            y = second
+            if not msg:
+                msg = "%r vs (expected) %r" % (x, y)
+            assert x == y, msg
+
+        def assertListEqual(self, first, second, msg=None):
+            assert isinstance(first, list)
+            assert isinstance(second, list)
+
+            x = first
+            y = second
+            if not msg:
+                msg = "%r vs (expected) %r" % (x, y)
+            assert x == y, msg
+
+        def assertSequenceEqual(self, first, second, msg=None):
+            assert isinstance(first, list) or isinstance(first, tuple)
+            assert isinstance(second, list) or isinstance(second, tuple)
+            assert type(first) == type(
+                second), f"sequences are different types ({type(first)}, {type(second)}"
+
+            x = first
+            y = second
+            if not msg:
+                msg = "%r vs (expected) %r" % (x, y)
+            assert x == y, msg
+
+        def assertDoesNotRaise(self, func=None, *args, **kwargs):
+            if func is None:
+                return AssertDoesNotRaiseContext(BaseException)
+
+            try:
+                func(*args, **kwargs)
+            except Exception as e:
+                assert False, f"exception '{e}' raised"
+
+        def assertRaisesAny(self, func=None, *args, **kwargs):
+            if func is None:
+                return AssertRaisesContext(BaseException)
+
+            try:
+                func(*args, **kwargs)
+            except Exception as e:
+                return
+
+            assert False, "exception not raised" % exc
+
+else:
+    from unittest.case import _AssertRaisesContext
+
+    class _AssertDoesNotRaiseContext(_AssertRaisesContext):
+        def __exit__(self, exc_type, exc_value, tb):
+            if exc_type is not None:
+                self.exception = exc_value.with_traceback(None)
+
+                try:
+                    exc_name = self.expected.__name__
+                except AttributeError:
+                    exc_name = str(self.expected)
+
+                if self.obj_name:
+                    self._raiseFailure("{} raised by {}".format(exc_name,
+                                                                self.obj_name))
+                else:
+                    self._raiseFailure("{} raised".format(exc_name))
+
+            else:
+                traceback.clear_frames(tb)
+
+            return True
+
+    class AssertRaisesMixin:
+        # todo foss: get this to override assertRaises
+        def assertRaisesAny(self, *args, **kwargs):
+            context = _AssertRaisesContext(BaseException, self)
+            try:
+                return context.handle('assertRaises', args, kwargs)
+            finally:
+                context = None
+
+    class AssertDoesNotRaiseMixin:
+        def assertDoesNotRaise(self, expected_exception=BaseException, *args, **kwargs):
+            context = _AssertDoesNotRaiseContext(expected_exception, self)
+            try:
+                return context.handle('assertDoesNotRaise', args, kwargs)
+            finally:
+                context = None
+
+if is_micropython:
+    class TestCase(TestCaseBase, MicropythonAssertMixin):
+        pass
+else:
+    class TestCase(TestCaseBase, AssertRaisesMixin, AssertDoesNotRaiseMixin):
+        pass

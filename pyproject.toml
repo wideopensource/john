@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "john"
-version = "0.1.3"
+version = "0.1.5"
 description = "Jeneral Outlying Helper Nuggetoids"
 authors = [
   "WideOpenTech <fossie@wideopentech.co.uk>",

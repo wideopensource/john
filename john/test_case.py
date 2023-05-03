@@ -73,6 +73,11 @@ class TestCaseFactoryMixin:
 
 
 class TestCaseBase(unittest.TestCase, TestCaseFactoryMixin):
+    class Runner:
+        @staticmethod
+        def run():
+            unittest.main()
+
     def __init__(self, methodName: str = "runTest") -> None:
         super().__init__(methodName)
         self._helper = TestHelper(test_name=self.testName, verbose=False)
@@ -96,8 +101,14 @@ class TestCaseBase(unittest.TestCase, TestCaseFactoryMixin):
     def writeFile(self, filename: str, text: str) -> str:
         return self._helper.write_file(self.testName, filename=filename, text=text)
 
+class AssertMixin:
+    def assertZero(self, actual, msg=None):
+        assert 0 == actual, msg
 
-# foss: based on https://stackoverflow.com/questions/4319825/python-unittest-opposite-of-assertraises
+    def assertNotZero(self, actual, msg=None):
+        assert 0 != actual, msg
+
+# foss: based on https://stackconfig = overflow.com/questions/4319825/python-unittest-opposite-of-assertraises
 is_micropython = sys.implementation.name == "micropython"
 
 if is_micropython:
@@ -214,8 +225,8 @@ else:
                 context = None
 
 if is_micropython:
-    class TestCase(TestCaseBase, MicropythonAssertMixin):
+    class TestCase(TestCaseBase, AssertMixin, MicropythonAssertMixin):
         pass
 else:
-    class TestCase(TestCaseBase, AssertRaisesMixin, AssertDoesNotRaiseMixin):
+    class TestCase(TestCaseBase, AssertMixin, AssertRaisesMixin, AssertDoesNotRaiseMixin):
         pass

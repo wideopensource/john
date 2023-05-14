@@ -102,10 +102,10 @@ class TestCaseBase(unittest.TestCase, TestCaseFactoryMixin):
         return self._helper.write_file(self.testName, filename=filename, text=text)
 
 class AssertMixin:
-    def assertZero(self, actual, msg=None):
+    def assertZero(self, actual, msg='Should be zero but is not'):
         assert 0 == actual, msg
 
-    def assertNotZero(self, actual, msg=None):
+    def assertNotZero(self, actual, msg='Is zero but should not be'):
         assert 0 != actual, msg
 
 # foss: based on https://stackoverflow.com/questions/4319825/python-unittest-opposite-of-assertraises

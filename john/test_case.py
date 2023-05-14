@@ -108,7 +108,7 @@ class AssertMixin:
     def assertNotZero(self, actual, msg=None):
         assert 0 != actual, msg
 
-# foss: based on https://stackconfig = overflow.com/questions/4319825/python-unittest-opposite-of-assertraises
+# foss: based on https://stackoverflow.com/questions/4319825/python-unittest-opposite-of-assertraises
 is_micropython = sys.implementation.name == "micropython"
 
 if is_micropython:
